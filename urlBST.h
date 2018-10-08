@@ -1,5 +1,6 @@
-// Interface for urlBST ADT.
+// Interface for urlBST ADT
 // Written by Michael Darmanian 8/10/18
+// Acknowledgement: This ADT is based on the BSTree ADT implementation from week 10 lab
 
 #ifndef URLBST_H
 #define URLBST_H
@@ -16,7 +17,7 @@ void freeBST(BST tree);
 // Creates new node for k if it doesn't exist and inserts u
 BST BSTInsert(BST t, char *k, char *u);
 
-// Prints BST in infix order
-void printBST(BST t);
+// Prints BST in infix order to file
+void fprintBST(BST t, FILE *fp);
 
 #endif
