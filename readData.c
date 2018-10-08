@@ -11,6 +11,8 @@
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
+#include "urlBST.h"
+#include "inverted.h"
 
 #define EXTENSIONLENGTH 5
 
@@ -49,5 +51,3 @@ Graph urlGraph(Set list) {
     }
     return g;
 }
-
-
