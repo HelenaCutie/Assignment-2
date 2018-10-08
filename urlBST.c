@@ -1,5 +1,6 @@
 // Binary search tree ADT implementation for urls based on keyword using linked lists
 // Written by Michael Darmanian 8/10/18
+// Acknowledgement: This ADT is based on the BSTree ADT implementation from lectures
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -28,7 +29,7 @@ static BSTNode newBSTNode(char *k);
 static URL newURLNode(char *u);
 static void freeURLList(URL l);
 static URL URLListInsert(URL l, char *u);
-static void printURLList(URL l);
+static void fprintURLList(URL l, FILE *fp);
 
 // Create new node in BST with the key "k"
 static BSTNode newBSTNode(char *k)
@@ -76,15 +77,15 @@ BST BSTInsert(BST t, char *k, char *u)
     }
 }
 
-// Prints BST in infix order
-void printBST(BST t)
+// Prints BST in infix order to file
+void fprintBST(BST t, FILE *fp)
 {
     if (t == NULL) return;
     printBST(t->left);
-    printf("%s ", t->key);
-    printURLList(t->urlList);
-    printf("\n");
-    printBST(t->right);
+    fprintf(fp, "%s ", t->key);
+    fprintURLList(t->urlList, fp);
+    fprintf(fp, "\n");
+    fprintBST(t->right);
 }
 
 // Helper functions:
@@ -113,7 +114,8 @@ static URL URLListInsert(URL l, char *u)
 {
     if (u == NULL) return l;
     else if (l == NULL) return newURLNode(u);
-    for (URL curr = l; curr->next != NULL; curr = curr->next)
+    URL curr;
+    for (curr = l; curr->next != NULL; curr = curr->next)
     {
         // duplicate
         if (strcmp(u, curr->url) == 0) break; 
@@ -142,10 +144,10 @@ static URL URLListInsert(URL l, char *u)
     return l;
 }
 
-// Prints the URL list
-static void printURLList(URL l)
+// Prints the URL list to file 
+static void fprintURLList(URL l, FILE *fp)
 {
     if (l == NULL) return;
-    printf("%s ", l->url);
+    fprintf(fp, "%s ", l->url);
     printURLList(l->next);
 }
