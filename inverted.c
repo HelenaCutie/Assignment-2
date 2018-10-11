@@ -9,9 +9,8 @@
 #include <math.h>
 #include "set.h"
 #include "urlBST.h"
-#include "inverted.h"
+#include "readData.h"
 
-#define EXTENSIONLENGTH 5
 #define TRUE            1
 #define FALSE           0
 #define MAXLINE         1000
@@ -19,10 +18,10 @@
 static Set getWordsNormalise(Set urls);
 static int wordUrlCmp(char *word, char *url);
 
-// Outputs the inverted index to file invertedIndex.txt
-void createInvertedIndex(Set urls)
+int main(void)
 {
     BST t = newBST();
+    Set urls = urlList();
     Set words = getWordsNormalise(urls);
     Link currW, currU;
     for (currW = words->elems; currW != NULL; currW = currW->next)
@@ -37,6 +36,7 @@ void createInvertedIndex(Set urls)
     fprintBST(t, output);
     
     fclose(output);
+    disposeSet(urls);
     disposeSet(words);
     freeBST(t);
 }
@@ -99,4 +99,3 @@ static int wordUrlCmp(char *word, char *url)
     fclose(fp);
     return found;
 }
-
