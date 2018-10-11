@@ -12,7 +12,6 @@
 #include "graph.h"
 #include "readData.h"
 #include "urlBST.h"
-#include "inverted.h"
 
 #define EXTENSIONLENGTH 5
 
