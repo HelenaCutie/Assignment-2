@@ -13,11 +13,13 @@
 #include "readData.h"
 #include "urlBST.h"
 
-#define EXTENSIONLENGTH 5
+#define MAXURL 1000
+#define TRUE   1
+#define FALSE  0
 
 Set urlList() {
     FILE *fp = fopen("collection.txt", "r");
-    char *currURL;
+    char currURL[MAXURL];
     Set list = newSet();
     while(fscanf(fp, "%s", currURL) == 1) {
         insertInto(list, currURL);
@@ -27,26 +29,36 @@ Set urlList() {
 }
 
 Graph urlGraph(Set list) {
-    char *currURL;
     Graph g = newGraph(list->nelems);
     Link curr = list->elems;
     while (curr != NULL) {
-        char *url = curr->val;
-        char filename[strlen(url) + EXTENSIONLENGTH] = "";
-        strcpy(filename, url);
-        strcat(filename, ".txt");
-        FILE *fp = fopen(filename, "r");
-        char *dest;
+        FILE *fp = openUrl(curr->val);
+        char *dest = "";
         while(fscanf(fp, "%s", dest) == 1) {
             if (strcmp(dest, "#end") == 0) {
                 break;
             }
             char *search = strstr(dest, "url");
             if (search != NULL) {
-                addEdge(g, url, dest);
+                addEdge(g, curr->val, dest);
             }
         }
         fclose(fp);
+        curr = curr->next;
     }
     return g;
+}
+
+FILE *openUrl(char *url)
+{
+    FILE *fp;
+    char filename[MAXURL];
+    strcpy(filename, url);
+    if (strstr(url, ".txt") == NULL) strcat(filename, ".txt");
+    if ((fp = fopen(filename, "r")) == NULL)
+    {
+        printf("ERROR: No such file %s in current directory\n", filename);
+        abort();
+    }
+    return fp;
 }
