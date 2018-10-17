@@ -11,7 +11,6 @@
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
-#include "urlBST.h"
 
 #define EXTENSIONLENGTH 5
 
@@ -22,8 +21,25 @@ Set urlList() {
     while(fscanf(fp, "%s", currURL) == 1) {
         insertInto(list, currURL);
     }
+    int maximum = 0;
+    Link currListNode;
+    for (currListNode = list->elems; currListNode != NULL; currListNode = currListNode->next) {
+        int index = NameToNum(currListNode->val);
+        if (index > maximum) {
+            maximum = index;
+        }
+    }
+    list->max = maximum;
     fclose(fp);
     return list;
+}
+
+// Change the name of the url into an integer to act as an index
+int NameToNum(char *urlName) {
+    int num = 0;
+    char *name = urlName + 3;
+    num = atoi(name);
+    return num;
 }
 
 Graph urlGraph(Set list) {
@@ -50,3 +66,5 @@ Graph urlGraph(Set list) {
     }
     return g;
 }
+
+
