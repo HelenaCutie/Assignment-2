@@ -1,3 +1,4 @@
+
 // Read data from collection.txt and build a graph representation using adjacency matrix
 // Written by Helena Ling on 07/10/18
 // Acknowledgement: Graph, stack, queue, set ADTs written by John Shepherd, BSTree ADT from week10 lab
@@ -7,23 +8,19 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include "stack.h"
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
+#include "urlBST.h"
 
-#define EXTENSIONLENGTH 5
-
-// Change the name of the url into an integer to act as an index
-int NameToNum(char *urlName) {
-    int num = 0;
-    char *name = urlName + 3;
-    num = atoi(name);
-    return num;
-}
+#define MAXURL 1000
+#define TRUE   1
+#define FALSE  0
 
 Set urlList() {
     FILE *fp = fopen("collection.txt", "r");
-    char *currURL = "";
+    char currURL[MAXURL];
     Set list = newSet();
     while(fscanf(fp, "%s", currURL) == 1) {
         insertInto(list, currURL);
@@ -36,11 +33,7 @@ Graph urlGraph(Set list) {
     Graph g = newGraph(list->nelems);
     Link curr = list->elems;
     while (curr != NULL) {
-        char *url = curr->val;
-        char *filename = calloc(strlen(url) + EXTENSIONLENGTH + 1, sizeof(char));
-        strcpy(filename, url);
-        strcat(filename, ".txt");
-        FILE *fp = fopen(filename, "r");
+        FILE *fp = openUrl(curr->val);
         char *dest = "";
         while(fscanf(fp, "%s", dest) == 1) {
             if (strcmp(dest, "#end") == 0) {
@@ -48,7 +41,7 @@ Graph urlGraph(Set list) {
             }
             char *search = strstr(dest, "url");
             if (search != NULL) {
-                addEdge(g, url, dest);
+                addEdge(g, curr->val, dest);
             }
         }
         fclose(fp);
@@ -57,4 +50,24 @@ Graph urlGraph(Set list) {
     return g;
 }
 
+FILE *openUrl(char *url)
+{
+    FILE *fp;
+    char filename[MAXURL];
+    strcpy(filename, url);
+    if (strstr(url, ".txt") == NULL) strcat(filename, ".txt");
+    if ((fp = fopen(filename, "r")) == NULL)
+    {
+        printf("ERROR: No such file %s in current directory\n", filename);
+        abort();
+    }
+    return fp;
+}
 
+// Change the name of the url into an integer to act as an index
+int NameToNum(char *urlName) {
+    int num = 0;
+    char *name = urlName + 3;
+    num = atoi(name);
+    return num;
+}

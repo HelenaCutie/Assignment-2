@@ -4,7 +4,7 @@ CFLAGS=-Wall -Werror -g
 OBJS=graph.o set.o readData.o
 
 pagerank : pagerank.o $(OBJS)
-	$(CC) -o pagerank $(OBJS)
+	gcc -g -o pagerank pagerank.o $(OBJS) -lcurl
 
 readData.o: readData.c readData.h graph.o set.o
 graph.o : graph.c graph.h

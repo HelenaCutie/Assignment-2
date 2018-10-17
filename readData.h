@@ -10,5 +10,7 @@ Set urlList();
 int NameToNum(char *urlName);
 // Creates graph of urls from collection.txt
 Graph urlGraph(Set list);
+// Returns pointer to opened url file
+FILE *openUrl(char *url);
 
 #endif

@@ -72,26 +72,33 @@ int compare (const void * a, const void * b) {
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         fprintf(stderr, "Usage: pagerank DampingFactor DifferenceInPageRankSum maxIterations\n");
+        exit(1);
     }
-    exit(1);
     if (atoi(argv[1]) >= 1 || atoi(argv[1]) < 0) {
         fprintf(stderr, "0 < damping factor < 1\n");
+        exit(1);
     }
-    exit(1);
     if (atoi(argv[2]) < 0) {
         fprintf(stderr, "difference in PageRank Sum > 0\n");
+        exit(1);
     }
-    exit(1);
     if (atoi(argv[3]) <= 0) {
         fprintf(stderr, "maxIterations > 0\n");
+        exit(1);
     }
-    exit(1);
-
     Set list = urlList();
+    // if (list == NULL) {
+    //     printf("successful!\n");
+    // }
     Graph g = urlGraph(list);
     int maxIterations = atoi(argv[3]);
-    double (*pagerank)[maxIterations + 1];
-    pagerank = calloc(list->max + 1, sizeof(*pagerank));
+    double **pagerank = calloc(list->max + 1, sizeof(int *));
+    int row_count = 0;
+    for (row_count = 0; row_count < list->max + 1; row_count++) {
+        pagerank[row_count] = calloc(maxIterations + 1, sizeof(int));
+    }
+    // [maxIterations + 1];
+    // pagerank = calloc(list->max + 1, sizeof(*pagerank));
     // A table of inLink counts and inLink URLs for each URL in the collection
     inLink *inLinkTable = calloc(list->max + 1, sizeof(inLink));
     // A table of outLink counts and outLink URLs for each URL in the collection
