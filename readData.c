@@ -7,32 +7,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "stack.h"
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
 
 #define EXTENSIONLENGTH 5
-
-Set urlList() {
-    FILE *fp = fopen("collection.txt", "r");
-    char *currURL;
-    Set list = newSet();
-    while(fscanf(fp, "%s", currURL) == 1) {
-        insertInto(list, currURL);
-    }
-    int maximum = 0;
-    Link currListNode;
-    for (currListNode = list->elems; currListNode != NULL; currListNode = currListNode->next) {
-        int index = NameToNum(currListNode->val);
-        if (index > maximum) {
-            maximum = index;
-        }
-    }
-    list->max = maximum;
-    fclose(fp);
-    return list;
-}
 
 // Change the name of the url into an integer to act as an index
 int NameToNum(char *urlName) {
@@ -42,17 +21,27 @@ int NameToNum(char *urlName) {
     return num;
 }
 
+Set urlList() {
+    FILE *fp = fopen("collection.txt", "r");
+    char *currURL = "";
+    Set list = newSet();
+    while(fscanf(fp, "%s", currURL) == 1) {
+        insertInto(list, currURL);
+    }
+    fclose(fp);
+    return list;
+}
+
 Graph urlGraph(Set list) {
-    char *currURL;
     Graph g = newGraph(list->nelems);
     Link curr = list->elems;
     while (curr != NULL) {
         char *url = curr->val;
-        char filename[strlen(url) + EXTENSIONLENGTH] = "";
+        char *filename = calloc(strlen(url) + EXTENSIONLENGTH + 1, sizeof(char));
         strcpy(filename, url);
         strcat(filename, ".txt");
         FILE *fp = fopen(filename, "r");
-        char *dest;
+        char *dest = "";
         while(fscanf(fp, "%s", dest) == 1) {
             if (strcmp(dest, "#end") == 0) {
                 break;
@@ -63,6 +52,7 @@ Graph urlGraph(Set list) {
             }
         }
         fclose(fp);
+        curr = curr->next;
     }
     return g;
 }

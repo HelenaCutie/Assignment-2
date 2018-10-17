@@ -4,7 +4,18 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+// #define strEQ(g,t) (strcmp((g),(t)) == 0)
+
+typedef unsigned char Num;
+
 typedef struct GraphRep *Graph;
+
+typedef struct GraphRep {
+	int   nV;
+	int   maxV;
+	char  **vertex;
+	Num   **edges;
+} GraphRep;
 
 // Function signatures
 

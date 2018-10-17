@@ -5,8 +5,23 @@
 #define SET_H
 
 typedef struct SetRep *Set;
+typedef struct Node *Link;
+
+typedef struct Node {
+	char *val;
+	Link  next;
+} Node;
+	
+typedef struct SetRep {
+	int   nelems;
+	int   max;
+	Link  elems;
+} SetRep;
 
 // Function signatures
+
+#define strEQ(s,t) (strcmp((s),(t)) == 0)
+#define strLT(s,t) (strcmp((s),(t)) < 0)
 
 Set newSet();
 void disposeSet(Set);

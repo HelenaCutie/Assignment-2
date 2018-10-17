@@ -7,23 +7,6 @@
 #include <string.h>
 #include "set.h"
 
-#define strEQ(s,t) (strcmp((s),(t)) == 0)
-#define strLT(s,t) (strcmp((s),(t)) < 0)
-
-typedef struct Node *Link;
-
-typedef struct Node {
-	char *val;
-	Link  next;
-} Node;
-	
-typedef struct SetRep {
-	int   nelems;
-	int   max;
-	Link  elems;
-} SetRep;
-
-// Function signatures
 
 Set newSet();
 void disposeSet(Set);

@@ -6,19 +6,8 @@
 #include <assert.h>
 #include <string.h>
 #include "graph.h"
+#include "set.h"
 
-#define strEQ(g,t) (strcmp((g),(t)) == 0)
-
-typedef unsigned char Num;
-
-typedef struct GraphRep {
-	int   nV;
-	int   maxV;
-	char  **vertex;
-	Num   **edges;
-} GraphRep;
-
-// Function signatures
 
 Graph newGraph();
 void  disposeGraph(Graph);
