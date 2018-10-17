@@ -6,6 +6,8 @@
 
 // Creates set of urls from collection.txt
 Set urlList();
+// Convert name of an url to the number included in the name
+int NameToNum(char *urlName);
 // Creates graph of urls from collection.txt
 Graph urlGraph(Set list);
 
