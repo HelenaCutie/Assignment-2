@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "math.h": "c",
-        "set.h": "c"
+        "set.h": "c",
+        "stdlib.h": "c"
     }
 }

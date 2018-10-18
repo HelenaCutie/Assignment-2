@@ -34,16 +34,25 @@ Graph urlGraph(Set list) {
     Link curr = list->elems;
     while (curr != NULL) {
         FILE *fp = openUrl(curr->val);
-        char *dest = "";
+        char dest[MAXURL];
         while(fscanf(fp, "%s", dest) == 1) {
             if (strcmp(dest, "#end") == 0) {
                 break;
             }
             char *search = strstr(dest, "url");
-            if (search != NULL) {
+            if (strcmp(curr->val, dest) != 0 && search != NULL) {
                 addEdge(g, curr->val, dest);
             }
         }
+        int maximum = 0;
+        Link currListNode;
+        for (currListNode = list->elems; currListNode != NULL; currListNode = currListNode->next) {
+            int index = NameToNum(currListNode->val);
+            if (index > maximum) {
+                maximum = index;
+            }
+        }
+        list->max = maximum;
         fclose(fp);
         curr = curr->next;
     }

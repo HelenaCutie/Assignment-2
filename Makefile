@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Werror -g
+CFLAGS=-Wall -lm -std=c11
 
 OBJS=graph.o set.o readData.o
 

@@ -1,6 +1,6 @@
 // Calculate weighted pagerank for every url in the file
 // Written by Helena Ling on 07/10/18
-// Acknowledgement: Graph, stack, queue, set ADTs written by John Shepherd, BSTree ADT from week10 lab
+// Acknowledgement: Graph and set ADTs written by John Shepherd, BSTree ADT from week10 lab
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,11 +35,11 @@ typedef struct outLinkRep *outLink;
 inLink newInlinkRep();
 outLink newOutlinkRep();
 int compare (const void * a, const void * b);
-int calculatePageRank(Set list, Graph g, int d, int diffPR, int maxIterations, double **pagerank, inLink *inLinkTable, outLink *outLinkTable);
-int sumPageRank(inLink *inLinkTable, outLink *outLinkTable, int index, int iteration, double **pagerank);
+double calculatePageRank(Set list, Graph g, double d, double diffPR, int maxIterations, double **pagerank, inLink *inLinkTable, outLink *outLinkTable);
+double sumPageRank(inLink *inLinkTable, outLink *outLinkTable, int index, int iteration, double **pagerank);
 int inLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int src);
-int outLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int src);
-int differenceAllURL(double **pagerank, int iteration, int numNode);
+double outLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int src);
+double differenceAllURL(double **pagerank, int iteration, int numNode);
 
 inLink newInlinkRep() {
 
@@ -63,10 +63,13 @@ outLink newOutlinkRep() {
 
 int compare (const void * a, const void * b) {
 
-    prValue *prValueA = (prValue *)a;
-    prValue *prValueB = (prValue *)b;
-
-    return (prValueA->pageRankValue - prValueB->pageRankValue);
+    const prValue *prValueA = (const prValue *)a;
+    const prValue *prValueB = (const prValue *)b;
+    if (prValueA->pageRankValue < prValueB->pageRankValue) {
+        return 1;
+    } else {
+        return -1;
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -74,56 +77,54 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: pagerank DampingFactor DifferenceInPageRankSum maxIterations\n");
         exit(1);
     }
-    if (atoi(argv[1]) >= 1 || atoi(argv[1]) < 0) {
+    if (atof(argv[1]) >= 1 || atof(argv[1]) < 0) {
         fprintf(stderr, "0 < damping factor < 1\n");
         exit(1);
     }
-    if (atoi(argv[2]) < 0) {
+    if (atof(argv[2]) < 0) {
         fprintf(stderr, "difference in PageRank Sum > 0\n");
         exit(1);
     }
-    if (atoi(argv[3]) <= 0) {
+    if (atof(argv[3]) <= 0) {
         fprintf(stderr, "maxIterations > 0\n");
         exit(1);
     }
     Set list = urlList();
-    // if (list == NULL) {
-    //     printf("successful!\n");
-    // }
     Graph g = urlGraph(list);
-    int maxIterations = atoi(argv[3]);
-    double **pagerank = calloc(list->max + 1, sizeof(int *));
+    int maxIterations = atof(argv[3]);
+    double **pagerank = calloc(list->max + 1, sizeof(double *));
     int row_count = 0;
-    for (row_count = 0; row_count < list->max + 1; row_count++) {
-        pagerank[row_count] = calloc(maxIterations + 1, sizeof(int));
+    for (row_count = 0; row_count < (list->max + 1); row_count++) {
+        pagerank[row_count] = calloc(maxIterations + 1, sizeof(double));
     }
-    // [maxIterations + 1];
-    // pagerank = calloc(list->max + 1, sizeof(*pagerank));
     // A table of inLink counts and inLink URLs for each URL in the collection
     inLink *inLinkTable = calloc(list->max + 1, sizeof(inLink));
     // A table of outLink counts and outLink URLs for each URL in the collection
     outLink *outLinkTable = calloc(list->max + 1, sizeof(outLink));
-    int numIterations = calculatePageRank(list, g, atoi(argv[1]), atoi(argv[2]), maxIterations, pagerank, inLinkTable, outLinkTable);
+
+    int numIterations = calculatePageRank(list, g, atof(argv[1]), atof(argv[2]), maxIterations, pagerank, inLinkTable, outLinkTable);
     Link url = NULL;
     prValue *PRList = calloc(list->max + 1, sizeof(struct prValue));
-    int index = 0;
+
+    int count_url = 0;
     for (url = list->elems; url != NULL; url = url->next) {
-        PRList[index].url = strdup(url->val);
-        PRList[index].noutlinks = (outLinkTable[index])->noutlinks;
-        PRList[index].pageRankValue = pagerank[index][numIterations];
-        index++;
+        int index = NameToNum(url->val);
+        PRList[count_url].url = strdup(url->val);
+        PRList[count_url].noutlinks = (outLinkTable[index])->noutlinks;
+        PRList[count_url].pageRankValue = pagerank[index][numIterations];
+        count_url++;
     }
-    qsort(PRList, list->nelems, sizeof(prValue), compare);
+    qsort(PRList, list->nelems, sizeof(prValue), &compare);
     FILE *fp = fopen("pagerankList.txt", "w");
     int count = 0;
-    for (count = 0; count < index; count++) {
-        fprintf(fp, "%s, %.1f, %.7f", PRList[count].url, PRList[count].noutlinks, PRList[count].pageRankValue);
+    for (count = 0; count < count_url; count++) {
+        fprintf(fp, "%s, %d, %.7f\n", PRList[count].url, (int) PRList[count].noutlinks, PRList[count].pageRankValue);
     }
     fclose(fp);
     return 0;
 }
 
-int calculatePageRank(Set list, Graph g, int d, int diffPR, int maxIterations, double **pagerank, inLink *inLinkTable, outLink *outLinkTable) {
+double calculatePageRank(Set list, Graph g, double d, double diffPR, int maxIterations, double **pagerank, inLink *inLinkTable, outLink *outLinkTable) {
 
     int numNode = list->nelems;
     Link to = NULL;
@@ -131,7 +132,7 @@ int calculatePageRank(Set list, Graph g, int d, int diffPR, int maxIterations, d
     for (to = list->elems; to != NULL; to = to->next) {
         // Initialise the pagerank value for each URL
         int index = NameToNum(to->val);
-        pagerank[index][0] = 1 / numNode;
+        pagerank[index][0] = (double) 1 / numNode;
         // Actually start filling in the table
         inLink collection = newInlinkRep();
         inLinkTable[index] = collection;
@@ -156,36 +157,37 @@ int calculatePageRank(Set list, Graph g, int d, int diffPR, int maxIterations, d
                 (outLinkTable[index])->noutlinks += 1;
                 insertInto((outLinkTable[index])->outlinkURL, dest->val);
             }
-            if ((outLinkTable[index])->noutlinks == 0) {
-                (outLinkTable[index])->noutlinks = 0.5;
-            }
+        }
+        if ((outLinkTable[index])->noutlinks == 0) {
+            (outLinkTable[index])->noutlinks = 0.5;
         }
     }
-    
+
     int iteration = 0;
-    int diff = diffPR;
+    double diff = diffPR;
     while (iteration < maxIterations && diff >= diffPR) {
         Link curr = NULL;
         for (curr = list->elems; curr != NULL; curr = curr->next) {
-            int sum = 0;
+            double sum = 0;
             int index = NameToNum(curr->val);
             sum = sumPageRank(inLinkTable, outLinkTable, index, iteration, pagerank);
-            pagerank[index][iteration + 1] = (1 - d) / numNode + d * sum;
-            diff = differenceAllURL(pagerank, iteration, numNode);
+            double damping = (double) (1 - d) / (double) numNode;
+            pagerank[index][iteration + 1] = damping + d * sum;
         }
+        diff = differenceAllURL(pagerank, iteration, list->max);
         iteration++;
     }
     return iteration;
 }
 
-int sumPageRank(inLink *inLinkTable, outLink *outLinkTable, int index, int iteration, double **pagerank) {
+double sumPageRank(inLink *inLinkTable, outLink *outLinkTable, int index, int iteration, double **pagerank) {
     Link srcURL = NULL;
-    int sum = 0;
+    double sum = 0;
     for (srcURL = (inLinkTable[index])->inlinkURL->elems; srcURL != NULL; srcURL = srcURL->next) {
         int src = NameToNum(srcURL->val);
-        int weightIn = (inLinkTable[index])->ninlinks / inLinkSumOfReferencePages(inLinkTable, outLinkTable, src);
-        int weightOut = (outLinkTable[index])->noutlinks / outLinkSumOfReferencePages(inLinkTable, outLinkTable, src);
-        sum += pagerank[index][iteration] * weightIn * weightOut;
+        double weightIn = (double) (inLinkTable[index])->ninlinks / inLinkSumOfReferencePages(inLinkTable, outLinkTable, src);
+        double weightOut = (double) (outLinkTable[index])->noutlinks / outLinkSumOfReferencePages(inLinkTable, outLinkTable, src);
+        sum += (double) pagerank[src][iteration] * weightIn * weightOut;
     }
     return sum;
 }
@@ -200,8 +202,8 @@ int inLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int sr
     return sum;
 }
 
-int outLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int src) {
-    int sum = 0;
+double outLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int src) {
+    double sum = 0;
     Link destUrl = NULL;
     for (destUrl = (outLinkTable[src])->outlinkURL->elems; destUrl != NULL; destUrl = destUrl->next) {
         int dest = NameToNum(destUrl->val);
@@ -210,11 +212,11 @@ int outLinkSumOfReferencePages(inLink *inLinkTable, outLink *outLinkTable, int s
     return sum;
 }
 
-int differenceAllURL(double **pagerank, int iteration, int numNode) {
-    int diff = 0;
+double differenceAllURL(double **pagerank, int iteration, int numNode) {
+    double diff = 0;
     int count = 0;
     for (count = 0; count < numNode; count++) {
-        int diffOneURL = fabs(pagerank[count][iteration + 1] - pagerank[count][iteration]);
+        double diffOneURL = fabs(pagerank[count][iteration + 1] - pagerank[count][iteration]);
         diff += diffOneURL;
     }
     return diff;
