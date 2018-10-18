@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
+#include <unistd.h>
 #include "stack.h"
 #include "set.h"
 #include "graph.h"
