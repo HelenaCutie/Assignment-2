@@ -139,7 +139,7 @@ void sumWeightsForUrls(RankList *lists, int numLists, double **sums, int size)
 // to the given integer array.
 void applyHungarianAlgorithm(double **sums, int *output, int size)
 {
-    int i, j, combinations[size][size], taken[size] = {FALSE};
+    int i, j, k, taken[size] = {FALSE};
     for (i = 0; i < size; i++)
     {
         double minRow = INFINITY;
@@ -162,31 +162,38 @@ void applyHungarianAlgorithm(double **sums, int *output, int size)
         for (j = 0; j < size; j++)
         {
             sums[j][i] -= minColumn;
-            if (sums[j][i] == 0) combinations[j][i] = 0;
-            else combinations[j][i] = -1;
+            if (sums[j][i] != 0) sums[j][i] = -1;
         }
-    }
+    } 
     
-    int found = FALSE;
-    while (!found)
+    int clash = FALSE;
+    for (i = 0; i < size; i++)
     {
-        int clash = TRUE;
-        for (i = 0; i < size; i++)
-        {
-            int assigned = FALSE;
-            for (j = 0; j < size; j++)
+        for (j = 0; j < size; j++)
+        {   
+            if (clash) 
             {
-                if (combinations[i][j] == 0 && !taken[j])
+                j = clash + 1;
+                sums[i][clash] = 0;
+                clash = FALSE;
+            }
+            if (sums[i][j] == 0)
+            {
+                if (taken[j]) clash = j;                 
+                else 
                 {
-                    taken[j] = TRUE;
-                    assigned = TRUE;
-                    combinations[i][j] = 1;                    
+                    sums[i][j] = 1;
+                    taken[j] = 1;
+                    if (assigned) i++;
                     break;
                 }
             }
-            if (!assigned)  
         }
-        if (!clash) found = TRUE;
+        if (clash)
+        {
+            i -= 2;
+            clash = FALSE;
+        }  
     }
 }
 
