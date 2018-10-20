@@ -27,7 +27,6 @@ Set newSet()
 	Set new = malloc(sizeof(SetRep));
 	assert(new != NULL);
 	new->nelems = 0;
-	new->max = 0;
 	new->elems = NULL;
 	return new;
 }

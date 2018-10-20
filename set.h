@@ -14,7 +14,6 @@ typedef struct Node {
 	
 typedef struct SetRep {
 	int   nelems;
-	int   max;
 	Link  elems;
 } SetRep;
 

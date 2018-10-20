@@ -8,7 +8,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "stack.h"
+#include <unistd.h>
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
@@ -44,15 +44,6 @@ Graph urlGraph(Set list) {
                 addEdge(g, curr->val, dest);
             }
         }
-        int maximum = 0;
-        Link currListNode;
-        for (currListNode = list->elems; currListNode != NULL; currListNode = currListNode->next) {
-            int index = NameToNum(currListNode->val);
-            if (index > maximum) {
-                maximum = index;
-            }
-        }
-        list->max = maximum;
         fclose(fp);
         curr = curr->next;
     }
@@ -73,10 +64,46 @@ FILE *openUrl(char *url)
     return fp;
 }
 
+indexList newIndexList() {
+    indexList new = calloc(1, sizeof(IndexList));
+    new->head = NULL;
+    new->last = NULL;
+    return new;
+}
+
+void insertIndex(indexList list, char *url, int index) {
+    indexNode new = calloc(1, sizeof(IndexNode));
+    new->url = strdup(url);
+    new->index = index;
+    new->next = NULL;
+    if (list->head == NULL) {
+        list->head = new;
+    } else {
+        list->last->next = new;
+    }
+    list->last = new;
+}
+
+indexList setUpIndex() {
+    indexList list = newIndexList();
+    FILE *fp = fopen("collection.txt", "r");
+    char currURL[MAXURL];
+    int index = 0;
+    while(fscanf(fp, "%s", currURL) == 1) {
+        insertIndex(list, currURL, index);
+        index++;
+    }
+    fclose(fp);
+    return list;
+}
+
 // Change the name of the url into an integer to act as an index
-int NameToNum(char *urlName) {
-    int num = 0;
-    char *name = urlName + 3;
-    num = atoi(name);
-    return num;
+int NameToNum(indexList list, char *urlName) {
+    indexNode curr = list->head;
+    for (curr = list->head; curr != NULL; curr = curr->next) {
+        if (strcmp(curr->url, urlName) == 0) {
+            return curr->index;
+        }
+    }
+    return 0;
 }
