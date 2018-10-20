@@ -157,7 +157,7 @@ void applyHungarianAlgorithm(double **sums, int *output, int size)
         double minColumn = INFINITY;
         for (j = 0; j < size; j++)
         {
-            if (sums[j][i] < minRow) minColumn = sums[j][i];
+            if (sums[j][i] < minColumn) minColumn = sums[j][i];
         }
         for (j = 0; j < size; j++)
         {
@@ -166,25 +166,37 @@ void applyHungarianAlgorithm(double **sums, int *output, int size)
         }
     } 
     
-    int clash = FALSE;
+    int clash = FALSE, postClash = FALSE;
     for (i = 0; i < size; i++)
     {
+        int pass = FALSE:
         for (j = 0; j < size; j++)
         {   
-            if (clash) 
+            if (clash && !pass) 
             {
+                if (sums[i][clash] != 1) break;
                 j = clash + 1;
                 sums[i][clash] = 0;
                 clash = FALSE;
+                postClash = TRUE;
             }
             if (sums[i][j] == 0)
             {
-                if (taken[j]) clash = j;                 
+                if (taken[j])
+                {
+                    clash = j; 
+                    pass = TRUE;
+                }                
                 else 
                 {
                     sums[i][j] = 1;
                     taken[j] = 1;
-                    if (assigned) i++;
+                    if (clash) clash = FALSE;
+                    else if (postClash)
+                    {
+                        i++;
+                        postClash = FALSE:
+                    }
                     break;
                 }
             }
