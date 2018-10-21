@@ -2,17 +2,18 @@
 // and prints the smallest scaled-footrule value with the corresponding order of
 // urls to achieve this
 // Written by Michael Darmanian 18/10/18
-// // Acknowledgement: set ADT written by John Shepherd
+
+#define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "set.h"
 
-#define TRUE  1
-#define FALSE 0
+#define MAXURL 1000
+#define TRUE   1
+#define FALSE  0
 
 typedef struct List *RankList;
 
@@ -33,35 +34,53 @@ typedef struct List
 } List;
 
 void fillLists(char **files, int numLists, RankList *lists);
-void sumWeightsForUrls(RankList *lists, int numLists, double **sums, int size);
-void applyHungarianAlgorithm(double **sums, int *output);
+double weightUrl(int urlPos, int listSize, int assignPos, int maxPos);
+void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size][size]);
+void applyHungarianAlgorithm(int size, double sums[size][size], int *output);
+void printResult(RankList *lists, int *positions, int numLists);
+void printList(RankList list, int *positions);
 RankList newRankList(char *name);
 UrlNode newUrlNode(char *url, int pos);
 void freeRankList(RankList list);
 void freeAllNodes(UrlNode node);
 void insertRankList(RankList list, char *url, int pos);
+void printOut(RankList list);
 
 int main(int argc, char **argv)
 {
     if (argc == 1)
     {
         printf("USAGE: ./scaledFootrule rankA.txt rankB.txt [rankC.txt] ...\n");
-        exit();
+        exit(1);
     }
     
-    int numLists = argc; // number of given files + 1 for union list
-    RankList lists[numLists]; // element 0 is union list
+    int i, numLists = argc; // number of given files + 1 for union list
+    RankList lists[numLists]; 
+    for (i = 0; i < numLists; i++)
+    {
+        if (i == 0) lists[i] = newRankList("union"); // element 0 is union list
+        else lists[i] = newRankList(argv[i]);
+    }
     fillLists(argv, numLists, lists);
     
     int numPositions = lists[0]->size;
     double urlSums[numPositions][numPositions];
-    sumWeightsForUrls(lists, numLists, urlSums, numPositions);
+    sumWeightsForUrls(lists, numLists, numPositions, urlSums);
     
     int positions[numPositions];
+    applyHungarianAlgorithm(numPositions, urlSums, positions);
     
+    for (i = 0; i < numPositions; i++) printf("%d ", positions[i]);
+    printf("\n"); 
     
-    for (int i = 0; i < numLists; i++)
+    printResult(lists, positions, numLists);
+    printList(lists[0], positions);
+    
+    printf("\n");
+    
+    for (i = 0; i < numLists; i++)
     {
+        printOut(lists[i]);
         freeRankList(lists[i]);
     }
     
@@ -73,13 +92,13 @@ void fillLists(char **files, int numLists, RankList *lists)
     for (int i = 1; i < numLists; i++)
     {
         FILE *fp;
-        if ((fp = fopen(*files[i], "r")) == NULL)
+        if ((fp = fopen(files[i], "r")) == NULL)
         {
-            printf("ERROR: No such file %s\n", *files[i]);
+            printf("ERROR: No such file %s\n", files[i]);
             abort();
         }
         
-        char *url;
+        char url[MAXURL];
         int pos = 1;
         while (fscanf(fp, "%s", url) == 1)
         {
@@ -90,21 +109,27 @@ void fillLists(char **files, int numLists, RankList *lists)
     }
 }
 
+// Applies algorithm 
+double weightUrl(int urlPos, int listSize, int assignPos, int maxPos)
+{
+    return fabs(((double)(urlPos) / (double)(listSize)) - 
+                ((double)(assignPos) / (double)(maxPos)));
+}
+
 // Puts the total weighting of each url across every given list and saves values
 // into given 2D double array
-void sumWeightsForUrls(RankList *lists, int numLists, double **sums, int size)
+void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size][size])
 {
-    double unionSize = (double)(lists[0]->size);
     UrlNode search = lists[0]->start;
     for (int i = 0; i < size; i++)
     {
         char *searchUrl = search->url;
         for (int j = 0; j < size; j++)
         {
-            double sum = 0, assign = (double)(j + 1);
+            double sum = 0;
+            int assign = j + 1;
             for (int k = 1; k < numLists; k++)
             {
-                double listSize = lists[k]->size;
                 UrlNode curr;
                 int found = FALSE;
                 for (curr = lists[k]->start; curr != NULL; curr = curr->next)
@@ -121,14 +146,12 @@ void sumWeightsForUrls(RankList *lists, int numLists, double **sums, int size)
                 
                 if (found)
                 {
-                    double urlPos = (double)(curr->pos);
-                    // applying formula
-                    sum += fabs((urlPos / listSize) - (assign / unionSize));
+                    sum += weightUrl(curr->pos, lists[k]->size, assign, lists[0]->size);
                 }
             }
             sums[i][j] = sum;
         }
-        search->next;
+        search = search->next;
     }
 }
 
@@ -137,9 +160,21 @@ void sumWeightsForUrls(RankList *lists, int numLists, double **sums, int size)
 // for each column. Finds positional values for each url that will result in the
 // smallest sum of all applications of the algorithm and outputs those positions
 // to the given integer array.
-void applyHungarianAlgorithm(double **sums, int *output, int size)
+void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
 {
-    int i, j, k, taken[size] = {FALSE};
+    int i, j, k, taken[size];
+    
+    printf("Sums:\n");
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            printf("%.6f ", sums[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");    
+    
     for (i = 0; i < size; i++)
     {
         double minRow = INFINITY;
@@ -150,8 +185,22 @@ void applyHungarianAlgorithm(double **sums, int *output, int size)
         for (j = 0; j < size; j++)
         {
             sums[i][j] -= minRow;
+            if (sums[i][j] < 1e-7) sums[i][j] = 0; // effectively zero
         }
+        taken[i] = FALSE;
     }
+    
+    printf("After row reduction:\n");
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            printf("%.6f ", sums[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n"); 
+    
     for (i = 0; i < size; i++)
     {
         double minColumn = INFINITY;
@@ -162,50 +211,137 @@ void applyHungarianAlgorithm(double **sums, int *output, int size)
         for (j = 0; j < size; j++)
         {
             sums[j][i] -= minColumn;
-            if (sums[j][i] != 0) sums[j][i] = -1;
+            if (sums[j][i] < 1e-7) sums[j][i] = 0; // effectively zero
         }
     } 
     
-    int clash = FALSE, postClash = FALSE;
+    printf("After column reduction:\n");
     for (i = 0; i < size; i++)
     {
-        int pass = FALSE:
         for (j = 0; j < size; j++)
-        {   
-            if (clash && !pass) 
+        {
+            printf("%.6f ", sums[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n"); 
+    
+    int clash = FALSE, next = FALSE;
+    for (i = 0; i < size; i++)
+    {
+        int pass = FALSE, pos, *reserve;
+        double *hold;
+        for (k = 0; k < size; k++)
+        {
+            if (sums[i][k] == -1 && !clash)
             {
-                if (sums[i][clash] != 1) break;
-                j = clash + 1;
-                sums[i][clash] = 0;
-                clash = FALSE;
-                postClash = TRUE;
+                pass = TRUE;
+                break;
             }
-            if (sums[i][j] == 0)
-            {
-                if (taken[j])
+        }
+        
+        if (!pass)
+        {
+            for (j = 0; j < size; j++)
+            {   
+                if (clash && !pass) 
                 {
-                    clash = j; 
-                    pass = TRUE;
-                }                
-                else 
-                {
-                    sums[i][j] = 1;
-                    taken[j] = 1;
-                    if (clash) clash = FALSE;
-                    else if (postClash)
+                    if (sums[i][clash] != -1)
                     {
-                        i++;
-                        postClash = FALSE:
+                        i -= 2;
+                        next = TRUE;
+                        break; 
                     }
+                    j = clash + 1;
+                    sums[i][clash] = 0;
+                    clash = FALSE;
+                    next = FALSE;
+                }
+                if (sums[i][j] == 0)
+                {
+                    if (taken[j])
+                    {
+                        hold = &sums[i][j];
+                        reserve = &output[i];
+                        pos = j + 1;
+                        clash = j; 
+                        pass = TRUE;
+                    }                
+                    else 
+                    {
+                        sums[i][j] = -1;
+                        taken[j] = TRUE;
+                        output[i] = j + 1;
+                        if (clash) clash = FALSE;
+                        break;
+                    }
+                }
+            }
+            if (clash && !next)
+            {
+                i -= 2;
+                *hold = -1;
+                *reserve = pos;
+                if (pass) pass = FALSE;
+                else clash = FALSE;
+            } 
+        } 
+    }
+    
+    printf("Combination:\n");
+    for (i = 0; i < size; i++)
+    {
+        for (j = 0; j < size; j++)
+        {
+            printf("%.6f ", sums[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n"); 
+}
+
+void printResult(RankList *lists, int *positions, int numLists)
+{
+    double sum = 0;
+    UrlNode search = lists[0]->start;
+    for (int i = 0; i < lists[0]->size; i++)
+    {
+        char *searchUrl = search->url;
+        for (int j = 1; j < numLists; j++)
+        {
+            UrlNode curr;
+            for (curr = lists[j]->start; curr != NULL; curr = curr->next)
+            {
+                char *listUrl = curr->url;
+                // break loop early since in alphabetical order
+                if (strcmp(searchUrl, listUrl) < 0) break;
+                else if (strcmp(searchUrl, listUrl) == 0)
+                {
+                    sum += weightUrl(curr->pos, lists[j]->size, positions[i],
+                                     lists[0]->size);
                     break;
                 }
             }
         }
-        if (clash)
+        search = search->next;
+    }
+    printf("%.6f\n", sum);   
+}
+
+void printList(RankList list, int *positions)
+{
+    for (int i = 0; i < list->size; i++)
+    {
+        int count = 1;
+        for (UrlNode curr = list->start; curr != NULL; curr = curr->next)
         {
-            i -= 2;
-            clash = FALSE;
-        }  
+            if (count == positions[i])
+            {
+                printf("%s\n", curr->url);
+                break;
+            }
+            count++;
+        }
     }
 }
 
@@ -233,6 +369,7 @@ void freeRankList(RankList list)
 {
     if (list == NULL) return;
     freeAllNodes(list->start);
+    free(list->name);
     free(list);
 }
 
@@ -268,4 +405,13 @@ void insertRankList(RankList list, char *url, int pos)
         new->next = curr;
     }
     list->size++;
+}
+
+void printOut(RankList list)
+{
+    printf("%s, size = %d\n", list->name, list->size);
+    for (UrlNode curr = list->start; curr != NULL; curr = curr->next)
+    {
+        printf("%s, pos = %d\n", curr->url, curr->pos);
+    }
 } 
