@@ -234,6 +234,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
     // currently have except one which I thought of randomly where the table
     // of sums is missing a zero in the necessary location which means we can't
     // find any combination that would work to the below code seg faults for it.
+    // To see why use list1 = url1 url3 url4 url2 and list2 = url6 url5 url7.
     // I would have texted this to you but I wrote this up late and didn't know
     // if you were sleeping and if you had sounds for your notifications so I 
     // this up here. I'M CONSIDERATE I TRY ERRY TIM PREASE DOO DEE APPRECIATE THANK!!
@@ -263,7 +264,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
             i -= 2;
             clash = TRUE;
         }
-    }
+    } 
     
   /*  int clash = FALSE, next = FALSE, k;
     for (i = 0; i < size; i++)
