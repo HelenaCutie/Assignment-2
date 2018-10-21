@@ -2,43 +2,34 @@
 // Written by Michael Darmanian 8/10/18
 // Acknowledgement: This ADT is based on the BSTree ADT implementation from lectures
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 #include <assert.h>
-#include <unistd.h>
 #include "urlBST.h"
-
-typedef struct URLNode *URL;
-
-typedef struct URLNode 
-{
-	char *url;
-	URL next;
-} URLNode;
+#include "set.h"
 
 typedef struct BSTNode 
 {
 	char *key;
-	URL urlList;
+	Set list;
 	BST left, right;
 } BSTNode;
 
 // Function prototypes:
 
-static BSTNode newBSTNode(char *k);
-static URL newURLNode(char *u);
-static void freeURLList(URL l);
-static URL URLListInsert(URL l, char *u);
-static void fprintURLList(URL l, FILE *fp);
+static BST newBSTNode(char *k);
+static void fShowSet(Link list, FILE *fp);
 
 // Create new node in BST with the key "k"
-static BSTNode newBSTNode(char *k)
+static BST newBSTNode(char *k)
 {
     BST new = malloc(sizeof(BSTNode));
     assert(new != NULL);
-    new->key = k;
-    new->urlList = newSet();
+    new->key = strdup(k);
+    new->list = newSet();
     new->left = new->right = NULL;
     return new;
 }
@@ -55,7 +46,8 @@ void freeBST(BST t)
     if (t == NULL) return;
     freeBST(t->right);
     freeBST(t->left);
-    freeURLList(t->urlList);
+    disposeSet(t->list);
+    free(t->key);
     free(t);
 }
 
@@ -66,89 +58,32 @@ BST BSTInsert(BST t, char *k, char *u)
     if (t == NULL) 
     {
         BST new = newBSTNode(k);
-        new->url = URLListInsert(new->url, u);
+        insertInto(new->list, u);
         return new;
     }
     else if (strcmp(k, t->key) < 0) t->left = BSTInsert(t->left, k, u);
     else if (strcmp(k, t->key) > 0) t->right = BSTInsert(t->right, k, u);
-    else // if (strcmp(k, t->key) == 0)
-    {
-        t->url = URLListInsert(t->url, u);
-        return t;
-    }
+    else insertInto(t->list, u);
+    return t;
 }
 
 // Prints BST in infix order to file
 void fprintBST(BST t, FILE *fp)
 {
     if (t == NULL) return;
-    printBST(t->left);
-    fprintf(fp, "%s ", t->key);
-    fprintURLList(t->urlList, fp);
+    fprintBST(t->left, fp);
+    fprintf(fp, "%s  ", t->key);
+    fShowSet(t->list->elems, fp);
     fprintf(fp, "\n");
-    fprintBST(t->right);
+    fprintBST(t->right, fp);
 }
 
 // Helper functions:
 
-// Creates a new URL node
-static URL newURLNode(char *u)
+// Prints set into file
+static void fShowSet(Link list, FILE *fp)
 {
-    URL new = malloc(sizeof(URLNode));
-    assert(new != NULL);
-    new->url = u;
-    new->next = NULL;
-    return new;
-}
-
-// Frees memory allocated for list
-static void freeURLList(URL l)
-{
-    if (l == NULL) return;
-    free(l->next);
-    free(l);
-}
-
-// Inserts the url "u" into the list in alphabetical order if it doesn't already exist and returns the head of the new list
-// Returns l if u is NULL
-static URL URLListInsert(URL l, char *u)
-{
-    if (u == NULL) return l;
-    else if (l == NULL) return newURLNode(u);
-    URL curr;
-    for (curr = l; curr->next != NULL; curr = curr->next)
-    {
-        // duplicate
-        if (strcmp(u, curr->url) == 0) break; 
-        // start of the list
-        else if (curr == l && strcmp(u, curr->url) < 0)
-        {
-            URL new = newURLNode(u); 
-            new->next = l;
-            return new;
-        }
-        // middle of the list
-        else if (strcmp(u, curr->url) > 0 && strcmp(u, curr->next->url) < 0)
-        {
-            URL temp = curr->next;
-            curr->next = newURLNode(u); 
-            curr->next->next = temp;
-            break;
-        }
-        // end of the list
-        else if (curr->next == NULL && strcmp(u, curr->url) > 0)
-        {
-            curr->next = newURLNode(u); 
-            break;
-        }
-    }
-    return l;
-}
-
-// Prints the URL list to file 
-static void fprintURLList(URL l, FILE *fp)
-{
-    if (l == NULL) return;
-    fprintf(fp, "%s ", l->url);
-    printURLList(l->next);
+    if (list == NULL) return;
+    fprintf(fp, "%s ", list->val);
+    fShowSet(list->next, fp);
 }
