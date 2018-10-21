@@ -11,9 +11,10 @@
 #include <ctype.h>
 #include <math.h>
 
-#define MAXURL 1000
-#define TRUE   1
-#define FALSE  0
+#define MAXURL    1000
+#define TRUE      1
+#define FALSE     0
+#define RESERVED -1
 
 typedef struct List *RankList;
 
@@ -162,7 +163,7 @@ void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size
 // to the given integer array.
 void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
 {
-    int i, j, k, taken[size];
+    int i, j, taken[size];
     
     printf("Sums:\n");
     for (i = 0; i < size; i++)
@@ -226,7 +227,45 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
     }
     printf("\n"); 
     
-    int clash = FALSE, next = FALSE;
+    // I was tryina fall asleep while thinking up how to make this work and I did
+    // but instead of falling asleep I woke up even more and spent 2 hours 
+    // tossing and turning until I just gave in and went to write out the new
+    // solution which is 10x simpler than the last and works on all tests we 
+    // currently have except one which I thought of randomly where the table
+    // of sums is missing a zero in the necessary location which means we can't
+    // find any combination that would work to the below code seg faults for it.
+    // I would have texted this to you but I wrote this up late and didn't know
+    // if you were sleeping and if you had sounds for your notifications so I 
+    // this up here. I'M CONSIDERATE I TRY ERRY TIM PREASE DOO DEE APPRECIATE THANK!!
+    int clash = FALSE;
+    for (i = 0; i < size; i++)
+    {
+        int assigned = FALSE;
+        for (j = 0; j < size; j++)
+        {
+            if (sums[i][j] == -1 && clash)
+            {
+                sums[i][j] = 0;
+                taken[j] = FALSE;
+                clash = FALSE;
+            }
+            else if (sums[i][j] == 0 && taken[j] == FALSE && !clash)
+            {
+                taken[j] = TRUE;
+                assigned = TRUE;
+                sums[i][j] = -1;
+                output[i] = j + 1;
+                break;
+            }
+        }
+        if (!assigned)
+        {
+            i -= 2;
+            clash = TRUE;
+        }
+    }
+    
+  /*  int clash = FALSE, next = FALSE, k;
     for (i = 0; i < size; i++)
     {
         int pass = FALSE, pos, *reserve;
@@ -286,7 +325,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
                 else clash = FALSE;
             } 
         } 
-    }
+    } */
     
     printf("Combination:\n");
     for (i = 0; i < size; i++)
