@@ -7,7 +7,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <unistd.h>
 #include "stack.h"
 #include "set.h"
 #include "graph.h"
@@ -50,8 +49,7 @@ Graph urlGraph(Set list) {
     return g;
 }
 
-FILE *openUrl(char *url)
-{
+FILE *openUrl(char *url) {
     FILE *fp;
     char filename[MAXURL];
     strcpy(filename, url);
