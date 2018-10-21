@@ -33,7 +33,7 @@ Graph urlGraph(Set list) {
     Link curr = list->elems;
     while (curr != NULL) {
         FILE *fp = openUrl(curr->val);
-        char *dest = "";
+        char dest[MAXURL];
         while(fscanf(fp, "%s", dest) == 1) {
             if (strcmp(dest, "#end") == 0) {
                 break;
