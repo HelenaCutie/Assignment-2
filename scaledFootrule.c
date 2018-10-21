@@ -330,12 +330,17 @@ void printResult(RankList *lists, int *positions, int numLists)
 
 void printList(RankList list, int *positions)
 {
-    for (int i = 0; i < list->size; i++)
+    int i, j, count;
+    for (i = 1; i <= list->size; i++)
     {
-        int count = 1;
+        count = 0;
+        for (j = 0; j < list->size; j++)
+        {
+            if (positions[j] == i) break;
+        }
         for (UrlNode curr = list->start; curr != NULL; curr = curr->next)
         {
-            if (count == positions[i])
+            if (count == j)
             {
                 printf("%s\n", curr->url);
                 break;
