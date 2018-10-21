@@ -236,7 +236,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
     // find any combination that would work to the below code seg faults for it.
     // To see why use list1 = url1 url3 url4 url2 and list2 = url6 url5 url7.
     // I would have texted this to you but I wrote this up late and didn't know
-    // if you were sleeping and if you had sounds for your notifications so I 
+    // if you were sleeping and if you had sounds for your notifications so I threw
     // this up here. I'M CONSIDERATE I TRY ERRY TIM PREASE DOO DEE APPRECIATE THANK!!
     int clash = FALSE;
     for (i = 0; i < size; i++)
