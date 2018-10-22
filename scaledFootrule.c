@@ -37,8 +37,9 @@ typedef struct List
 void fillLists(char **files, int numLists, RankList *lists);
 double weightUrl(int urlPos, int listSize, int assignPos, int maxPos);
 void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size][size]);
-void applyHungarianAlgorithm(int size, double sums[size][size], int *output);
-void printResult(RankList *lists, int *positions, int numLists);
+void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][size], int *output);
+double totalSum(RankList *lists, int *positions, int numLists);
+void findBestCombination(RankList *lists, int numLists, int *taken, int start, int end, double *lowestSum, int *bestComb);
 void printList(RankList list, int *positions);
 RankList newRankList(char *name);
 UrlNode newUrlNode(char *url, int pos);
@@ -69,12 +70,12 @@ int main(int argc, char **argv)
     sumWeightsForUrls(lists, numLists, numPositions, urlSums);
     
     int positions[numPositions];
-    applyHungarianAlgorithm(numPositions, urlSums, positions);
+    scaledFootrule(lists, numLists, numPositions, urlSums, positions);
     
     for (i = 0; i < numPositions; i++) printf("%d ", positions[i]);
     printf("\n"); 
     
-    printResult(lists, positions, numLists);
+   // double sum = totalSum(lists, positions, numLists);
     printList(lists[0], positions);
     
     printf("\n");
@@ -161,9 +162,9 @@ void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size
 // for each column. Finds positional values for each url that will result in the
 // smallest sum of all applications of the algorithm and outputs those positions
 // to the given integer array.
-void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
+void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][size], int *output)
 {
-    int i, j, taken[size];
+    int i, j, taken[size], zerosRow[size], zerosCol[size];
     
     printf("Sums:\n");
     for (i = 0; i < size; i++)
@@ -188,7 +189,8 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
             sums[i][j] -= minRow;
             if (sums[i][j] < 1e-7) sums[i][j] = 0; // effectively zero
         }
-        taken[i] = FALSE;
+        zerosRow[i] = 0;
+        zerosCol[i] = 0;
     }
     
     printf("After row reduction:\n");
@@ -204,6 +206,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
     
     for (i = 0; i < size; i++)
     {
+        int zeroCount = 0, zeroPos = 0;
         double minColumn = INFINITY;
         for (j = 0; j < size; j++)
         {
@@ -212,36 +215,54 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
         for (j = 0; j < size; j++)
         {
             sums[j][i] -= minColumn;
-            if (sums[j][i] < 1e-7) sums[j][i] = 0; // effectively zero
+            if (sums[j][i] < 1e-7) // effectively zero
+            { 
+                sums[j][i] = 0;
+                zerosRow[j]++;
+                zerosCol[i]++; 
+            }
         }
     } 
     
     printf("After column reduction:\n");
     for (i = 0; i < size; i++)
     {
+       // int zeroCount = 0, zeroPos = 0;
         for (j = 0; j < size; j++)
         {
             printf("%.6f ", sums[i][j]);
+          /*  if (sums[i][j] == 0)
+            {
+                zeroCount++;
+                zeroPos = j;
+            } */
         }
         printf("\n");
+      /*  if (zeroCount == 1)
+        {
+            taken[i] = TRUE;
+            output[zeroPos] = i + 1;
+        }
+        else */ taken[i] = FALSE;
     }
     printf("\n"); 
     
-    // I was tryina fall asleep while thinking up how to make this work and I did
-    // but instead of falling asleep I woke up even more and spent 2 hours 
-    // tossing and turning until I just gave in and went to write out the new
-    // solution which is 10x simpler than the last and works on all tests we 
-    // currently have except one which I thought of randomly where the table
-    // of sums is missing a zero in the necessary location which means we can't
-    // find any combination that would work to the below code seg faults for it.
-    // To see why use list1 = url1 url3 url4 url2 and list2 = url6 url5 url7.
-    // I would have texted this to you but I wrote this up late and didn't know
-    // if you were sleeping and if you had sounds for your notifications so I threw
-    // this up here. I'M CONSIDERATE I TRY ERRY TIM PREASE DOO DEE APPRECIATE THANK!!
-    int clash = FALSE;
+    double lowestSum = INFINITY;
+    findBestCombination(lists, numLists, taken, 0, size, &lowestSum, output);
+    printf("%.6f\n", lowestSum);
+    
+  /*  int clash = FALSE, allow = FALSE;
     for (i = 0; i < size; i++)
     {
+        //printf("i = %d\n", i);
         int assigned = FALSE;
+        if (i < 0)
+        {
+           // printf("checked\n");
+            i = 0;
+            allow = TRUE;
+            clash = FALSE;
+        }
         for (j = 0; j < size; j++)
         {
             if (sums[i][j] == -1 && clash)
@@ -250,7 +271,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
                 taken[j] = FALSE;
                 clash = FALSE;
             }
-            else if (sums[i][j] == 0 && taken[j] == FALSE && !clash)
+            else if (sums[i][j] == 0 && (!taken[j] || allow) && !clash)
             {
                 taken[j] = TRUE;
                 assigned = TRUE;
@@ -264,7 +285,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
             i -= 2;
             clash = TRUE;
         }
-    } 
+    }  */
     
   /*  int clash = FALSE, next = FALSE, k;
     for (i = 0; i < size; i++)
@@ -328,7 +349,7 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
         } 
     } */
     
-    printf("Combination:\n");
+  /*  printf("Combination:\n");
     for (i = 0; i < size; i++)
     {
         for (j = 0; j < size; j++)
@@ -337,12 +358,12 @@ void applyHungarianAlgorithm(int size, double sums[size][size], int *output)
         }
         printf("\n");
     }
-    printf("\n"); 
+    printf("\n"); */
 }
 
-void printResult(RankList *lists, int *positions, int numLists)
+double totalSum(RankList *lists, int *positions, int numLists)
 {
-    double sum = 0;
+    double total = 0;
     UrlNode search = lists[0]->start;
     for (int i = 0; i < lists[0]->size; i++)
     {
@@ -357,15 +378,37 @@ void printResult(RankList *lists, int *positions, int numLists)
                 if (strcmp(searchUrl, listUrl) < 0) break;
                 else if (strcmp(searchUrl, listUrl) == 0)
                 {
-                    sum += weightUrl(curr->pos, lists[j]->size, positions[i],
-                                     lists[0]->size);
+                    total += weightUrl(curr->pos, lists[j]->size, positions[i],
+                                       lists[0]->size);
                     break;
                 }
             }
         }
         search = search->next;
     }
-    printf("%.6f\n", sum);   
+    return total;   
+}
+
+void findBestCombination(RankList *lists, int numLists, int *taken, int start, int end, double *lowestSum, int *bestComb)
+{
+    if (start == end)
+    {
+        printf("checked\n");
+        double sum = totalSum(lists, bestComb, numLists);
+        if (sum < *lowestSum) *lowestSum = sum;
+        return;
+    }
+    
+    for (int i = start; i < end; i++)
+    {
+        if (taken[i] == FALSE)
+        {
+            taken[i] = TRUE;
+            bestComb[i] = i + 1;
+            findBestCombination(lists, numLists, taken, i + 1, end, lowestSum, bestComb);
+            taken[i] = FALSE;
+        }
+    }
 }
 
 void printList(RankList list, int *positions)
