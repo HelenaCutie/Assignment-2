@@ -120,9 +120,6 @@ int main(int argc, char *argv[]) {
                 data += offset;
                 if (strcmp(urlName, toCalculate) != 0) {
                     numURLs++;
-                    if (strcmp(queryTerm[queryCount], "to") == 0) {
-                        printf("%s\n", urlName);
-                    }
                 }
             }
             // Calculate for tf and idf values for each url based on current query term
