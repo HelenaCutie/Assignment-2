@@ -18,6 +18,7 @@
 #define TRUE   1
 #define FALSE  0
 
+// Creates set of urls from collection.txt
 Set urlList() {
     FILE *fp = fopen("collection.txt", "r");
     char currURL[MAXURL];
@@ -29,6 +30,7 @@ Set urlList() {
     return list;
 }
 
+// Creates graph of urls from collection.txt
 Graph urlGraph(Set list) {
     Graph g = newGraph(list->nelems);
     Link curr = list->elems;
@@ -50,6 +52,7 @@ Graph urlGraph(Set list) {
     return g;
 }
 
+// Returns pointer to opened url file
 FILE *openUrl(char *url)
 {
     FILE *fp;
@@ -64,6 +67,7 @@ FILE *openUrl(char *url)
     return fp;
 }
 
+// Create a linked list to store the name of urls and corresponding index
 indexList newIndexList() {
     indexList new = calloc(1, sizeof(IndexList));
     new->head = NULL;
@@ -71,6 +75,7 @@ indexList newIndexList() {
     return new;
 }
 
+// Insert an index node to the given index list
 void insertIndex(indexList list, char *url, int index) {
     indexNode new = calloc(1, sizeof(IndexNode));
     new->url = strdup(url);
@@ -84,6 +89,7 @@ void insertIndex(indexList list, char *url, int index) {
     list->last = new;
 }
 
+// Set up an index list using urls in collection.txt
 indexList setUpIndex() {
     indexList list = newIndexList();
     FILE *fp = fopen("collection.txt", "r");
@@ -97,6 +103,7 @@ indexList setUpIndex() {
     return list;
 }
 
+// Free up the given index list
 void freeIndexList(indexList list) {
     indexNode curr = list->head;
     indexNode prev = NULL;
