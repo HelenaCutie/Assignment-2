@@ -136,6 +136,10 @@ int main(int argc, char *argv[]) {
 
     fclose(fp);
 
+    int free_count = 0;
+    for (free_count = 0; free_count < count_url; free_count++) {
+        free(PRList[free_count].url);
+    }
     free(PRList);
 
     Link to = NULL;
@@ -154,7 +158,7 @@ int main(int argc, char *argv[]) {
     }
     free(inLinkTable);
 
-    int free_count = 0;
+    free_count = 0;
     for (free_count = 0; free_count < list->nelems; free_count++) {
         free(pagerank[free_count]);
     }

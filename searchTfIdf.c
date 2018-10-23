@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
                     tfidfList[index].tfidf += tfTable[index][queryCount] * idfTable[index][queryCount];
                 }
             }
+            free(toCalculate);
         }
 
         rewind(fp);
@@ -155,9 +156,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Free all calloced memory
+    int free_count = 0;
+    for (free_count = 0; free_count < numWords; free_count++) {
+        free(queryTerm[numWords]);
+    }
     free(queryTerm);
 
-    int free_count = 0;
+    free_count = 0;
     for (free_count = 0; free_count < list->nelems; free_count++) {
         free(tfTable[free_count]);
     }
@@ -169,6 +174,10 @@ int main(int argc, char *argv[]) {
     }
     free(idfTable);
 
+    free_count = 0;
+    for (free_count = 0; free_count < count_url; free_count++) {
+        free(tfidfList[free_count].url);
+    }
     free(tfidfList);
 
     disposeSet(list);
@@ -194,6 +203,7 @@ double calculateTf(char *toCalculate, char *url) {
             if (strcmp(normSearch, toCalculate) == 0) {
                 match++;
             }
+            free(normSearch);
         }
         if (strcmp(search, "Section-2") == 0) {
             reached = TRUE;
