@@ -18,6 +18,6 @@ void freeBST(BST tree);
 BST BSTInsert(BST t, char *k, char *u);
 
 // Prints BST in infix order to file
-void fprintBST(BST t, FILE *fp);
+void fprintBST(BST t, FILE *);
 
 #endif
