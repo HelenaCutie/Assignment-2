@@ -1,14 +1,14 @@
 // Reads collection.txt and outputs the words contained in which urls for every word across all given urls
 // Written by Michael Darmanian 8/10/18
-// Acknowledgement: set ADT written by John Shepherd
+// Acknowledgement: set and graph ADTs written by John Shepherd
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <unistd.h>
 #include "set.h"
+#include "graph.h"
 #include "urlBST.h"
 #include "readData.h"
 
@@ -18,19 +18,19 @@
 
 static Set getWordsNormalise(Set urls);
 static int wordUrlCmp(char *word, char *url);
+static void normaliseWord(char *word, char *buffer);
 
 int main(void)
 {
     BST t = newBST();
     Set urls = urlList();
     Set words = getWordsNormalise(urls);
-    Link currW, currU;
-    for (currW = words->elems; currW != NULL; currW = currW->next)
+    for (Link currW = words->elems; currW != NULL; currW = currW->next)
     {
-        for (currU = urls->elems; currU != NULL; currU = currU->next)
+        for (Link currU = urls->elems; currU != NULL; currU = currU->next)
         {
             if (wordUrlCmp(currW->val, currU->val)) 
-                BSTInsert(BST t, currW->val, currU->val);
+                t = BSTInsert(t, currW->val, currU->val);                
         }
     }    
     FILE *output = fopen("invertedIndex.txt", "w");
@@ -49,28 +49,17 @@ static Set getWordsNormalise(Set urls)
     Set words = newSet();
     for (Link curr = urls->elems; curr != NULL; curr = curr->next)
     {
-        char *url = curr->val;
-        char filename[strlen(url) + EXTENSIONLENGTH] = "";
-        strcpy(filename, url);
-        strcat(filename, ".txt");
-        FILE *fp = fopen(filename, "r");
-        char *word;
+        FILE *fp = openUrl(curr->val);
+        if (fp == NULL) abort();
+        char word[MAXLINE];
         int reached = FALSE;
         while (fscanf(fp, "%s", word))
         {
             if (reached)
             {
-                if (strcmp(word, "Section-2") == 0) break; // end of Section-2
-                char *normWord;
-                int i;
-                for (i = 0; i < strlen(word); i++) // normalise
-                {
-                    word[i] = tolower(word[i]);
-                    if (i == 1) strcpy(normWord, word[i]);
-                    else if (i == strlen(word) - 2 &&
-                             !(word[i] >= 'a' && word[i] <= 'z')) break;
-                    else strcat(normWord, word[i]);
-                }
+                if (strcmp(word, "#end") == 0) break; // end of Section-2
+                char normWord[strlen(word) + 1];
+                normaliseWord(word, normWord);
                 insertInto(words, normWord);
             }
             // start of Section-2
@@ -84,14 +73,14 @@ static Set getWordsNormalise(Set urls)
 // Returns TRUE if word exists in the url and 0 otherwise
 static int wordUrlCmp(char *word, char *url)
 {
-    char line[MAXLINE], filename[strlen(url) - 1 + EXTENSIONLENGTH] = "";
-    strcpy(filename, url);
-    if (strstr(url, ".txt") == NULL) strcat(filename, ".txt");
-    FILE *fp = fopen(filename, "r");
+    FILE *fp = openUrl(url);
+    char findWord[MAXLINE];
     int found = FALSE;
-    while (fgets(line, MAXLINE, fp))
+    while (fscanf(fp, "%s", findWord) == 1)
     {
-        if (strstr(line, word))
+        char normWord[strlen(findWord) + 1];
+        normaliseWord(findWord, normWord);
+        if (strcmp(normWord, word) == 0)
         {
             found = TRUE;
             break;
@@ -99,4 +88,15 @@ static int wordUrlCmp(char *word, char *url)
     }    
     fclose(fp);
     return found;
+}
+
+static void normaliseWord(char *word, char *buffer)
+{
+    char normWord[strlen(word) + 1];
+    int i, last = strlen(word) - 1;
+    for (i = 0; i < strlen(word); i++) word[i] = tolower(word[i]);
+    strcpy(normWord, word);
+    if (word[last] == '.' || word[last] == ',' || word[last] == ';' || 
+        word[last] == '?') normWord[last] = '\0';
+    strcpy(buffer, normWord);
 }
