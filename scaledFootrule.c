@@ -39,14 +39,13 @@ double weightUrl(int urlPos, int listSize, int assignPos, int maxPos);
 void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size][size]);
 void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][size], int *output);
 double totalSum(RankList *lists, int *positions, int numLists);
-void findBestCombination(RankList *lists, int numLists, int *taken, int size, double *lowestSum, int *comb, int index, int end, int *bestComb);
+void findBestCombination(RankList *lists, int numLists, int *taken, int size, double *lowestSum, int *comb, int index, int skip, int *bestComb);
 void printList(RankList list, int *positions);
 RankList newRankList(char *name);
 UrlNode newUrlNode(char *url, int pos);
 void freeRankList(RankList list);
 void freeAllNodes(UrlNode node);
 void insertRankList(RankList list, char *url, int pos);
-void printOut(RankList list);
 
 int main(int argc, char **argv)
 {
@@ -69,22 +68,14 @@ int main(int argc, char **argv)
     double urlSums[numPositions][numPositions];
     sumWeightsForUrls(lists, numLists, numPositions, urlSums);
     
+    // Each element of positions is the P value given to the corresponding
+    // alphabetically ordered url in the union list
     int positions[numPositions];
     scaledFootrule(lists, numLists, numPositions, urlSums, positions);
-    
-    for (i = 0; i < numPositions; i++) printf("%d ", positions[i]);
-    printf("\n"); 
-    
-   // double sum = totalSum(lists, positions, numLists);
+
     printList(lists[0], positions);
     
-    printf("\n");
-    
-    for (i = 0; i < numLists; i++)
-    {
-        printOut(lists[i]);
-        freeRankList(lists[i]);
-    }
+    for (i = 0; i < numLists; i++) freeRankList(lists[i]);
     
     return 0;
 }
@@ -160,23 +151,17 @@ void sumWeightsForUrls(RankList *lists, int numLists, int size, double sums[size
 // Uses Hungarian algorithm on given 2D array of sums i.e. subtracting smallest
 // value in each "row" from each value in that row then does the same thing but
 // for each column. Finds positional values for each url that will result in the
-// smallest sum of all applications of the algorithm and outputs those positions
-// to the given integer array.
+// smallest sum of all applications of the algorithm (corresponding to zeros)
+// and outputs those positions to the given integer array.
 void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][size], int *output)
 {
-    int i, j, taken[size], zerosRow[size], zerosCol[size], combination[size];
+    // taken: each element refers to the given position P value i.e. element 0
+    // is value 1 where last element is value size (max position value)
+    // combination: array keeping every possible test combination
+    // size: max number of unique elements in union list i.e. lists[0]->size
+    int i, j, k, taken[size], combination[size];  
     
-    printf("Sums:\n");
-    for (i = 0; i < size; i++)
-    {
-        for (j = 0; j < size; j++)
-        {
-            printf("%.6f ", sums[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n");    
-    
+    // Subtract smallest value of each row from all values in each row and initialise arrays
     for (i = 0; i < size; i++)
     {
         double minRow = INFINITY;
@@ -190,22 +175,11 @@ void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][s
             if (sums[i][j] < 1e-7) sums[i][j] = 0; // effectively zero
         }
         taken[i] = FALSE;
-        zerosRow[i] = 0;
-        zerosCol[i] = 0;
         combination[i] = 0;
-    }
+        output[i] = 0;
+    } 
     
-    printf("After row reduction:\n");
-    for (i = 0; i < size; i++)
-    {
-        for (j = 0; j < size; j++)
-        {
-            printf("%.6f ", sums[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n"); 
-    
+    // Subtract smallest value of each column from all values in each column
     for (i = 0; i < size; i++)
     {
         double minColumn = INFINITY;
@@ -216,154 +190,51 @@ void scaledFootrule(RankList *lists, int numLists, int size, double sums[size][s
         for (j = 0; j < size; j++)
         {
             sums[j][i] -= minColumn;
-            if (sums[j][i] < 1e-7) // effectively zero
-            { 
-                sums[j][i] = 0;
-                zerosRow[j]++;
-                zerosCol[i]++; 
-            }
+            if (sums[j][i] < 1e-7) sums[j][i] = 0; // effectively zero
         }
     } 
     
-    int numRes = 0;
-    printf("After column reduction:\n");
+    // Assign positions in output based on position of zero in corresponding column
+    // Unique values that are RESERVED are saved as negative in the output array
+    // which are used for finding possible combinations but will never change
     for (i = 0; i < size; i++)
     {
-       // int zeroCount = 0, zeroPos = 0;
         for (j = 0; j < size; j++)
         {
-            printf("%.6f ", sums[i][j]);
-            if (zerosRow[i] == 1 && zerosCol[j] == 1 && taken[i] != RESERVED && sums[i][j] == 0)
-            {
-                taken[i] = RESERVED;
-                output[i] = j + 1;
-                numRes++;
-               // if (output[i] == 2) printf("%d %d\n", i, j);
-            }  
+            if (sums[i][j] == 0)
+            {       
+                if (taken[j] == FALSE)
+                {         
+                    taken[j] = RESERVED;
+                    output[i] = -1 * (j + 1);
+                    combination[i] = j + 1;
+                }
+                else if (taken[j] == RESERVED)
+                {
+                    taken[j] = TRUE;
+                    for (k = 0; k < size; k++)
+                    {
+                        if (output[k] == -1 * (j + 1))
+                        {
+                            output[k] = abs(output[k]);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
         }
-        printf("\n");
-       // if (taken[i] == RESERVED) printf("reserved\n");
-      /*  if (zeroCount == 1)
-        {
-            taken[i] = TRUE;
-            output[zeroPos] = i + 1;
-        }
-        else taken[i] = FALSE; */
+    }  
+    
+    // Reset taken array for finding combinations
+    for (i = 0; i < size; i++)
+    {
+        if (taken[i] != RESERVED) taken[i] = FALSE;
     }
-    printf("\n"); 
     
     double lowestSum = INFINITY;
-    findBestCombination(lists, numLists, taken, size, &lowestSum, combination, 0, size, output);
+    findBestCombination(lists, numLists, taken, size, &lowestSum, combination, 0, FALSE, output);
     printf("%.6f\n", lowestSum);
-    
-  /*  int clash = FALSE, allow = FALSE;
-    for (i = 0; i < size; i++)
-    {
-        //printf("i = %d\n", i);
-        int assigned = FALSE;
-        if (i < 0)
-        {
-           // printf("checked\n");
-            i = 0;
-            allow = TRUE;
-            clash = FALSE;
-        }
-        for (j = 0; j < size; j++)
-        {
-            if (sums[i][j] == -1 && clash)
-            {
-                sums[i][j] = 0;
-                taken[j] = FALSE;
-                clash = FALSE;
-            }
-            else if (sums[i][j] == 0 && (!taken[j] || allow) && !clash)
-            {
-                taken[j] = TRUE;
-                assigned = TRUE;
-                sums[i][j] = -1;
-                output[i] = j + 1;
-                break;
-            }
-        }
-        if (!assigned)
-        {
-            i -= 2;
-            clash = TRUE;
-        }
-    }  */
-    
-  /*  int clash = FALSE, next = FALSE, k;
-    for (i = 0; i < size; i++)
-    {
-        int pass = FALSE, pos, *reserve;
-        double *hold;
-        for (k = 0; k < size; k++)
-        {
-            if (sums[i][k] == -1 && !clash)
-            {
-                pass = TRUE;
-                break;
-            }
-        }
-        
-        if (!pass)
-        {
-            for (j = 0; j < size; j++)
-            {   
-                if (clash && !pass) 
-                {
-                    if (sums[i][clash] != -1)
-                    {
-                        i -= 2;
-                        next = TRUE;
-                        break; 
-                    }
-                    j = clash + 1;
-                    sums[i][clash] = 0;
-                    clash = FALSE;
-                    next = FALSE;
-                }
-                if (sums[i][j] == 0)
-                {
-                    if (taken[j])
-                    {
-                        hold = &sums[i][j];
-                        reserve = &output[i];
-                        pos = j + 1;
-                        clash = j; 
-                        pass = TRUE;
-                    }                
-                    else 
-                    {
-                        sums[i][j] = -1;
-                        taken[j] = TRUE;
-                        output[i] = j + 1;
-                        if (clash) clash = FALSE;
-                        break;
-                    }
-                }
-            }
-            if (clash && !next)
-            {
-                i -= 2;
-                *hold = -1;
-                *reserve = pos;
-                if (pass) pass = FALSE;
-                else clash = FALSE;
-            } 
-        } 
-    } */
-    
-   // printf("Combination:\n");
-    for (i = 0; i < size; i++)
-    {
-     //   for (j = 0; j < size; j++)
-     //   {
-            printf("Row[%d] = %d, Col[%d] = %d\n", i, zerosRow[i], i, zerosCol[i]);
-      //  } 
-      //  printf("\n");
-    }
-    printf("\n"); 
 }
 
 double totalSum(RankList *lists, int *positions, int numLists)
@@ -383,8 +254,8 @@ double totalSum(RankList *lists, int *positions, int numLists)
                 if (strcmp(searchUrl, listUrl) < 0) break;
                 else if (strcmp(searchUrl, listUrl) == 0)
                 {
-                    total += weightUrl(curr->pos, lists[j]->size, positions[i],
-                                       lists[0]->size);
+                    total += weightUrl(curr->pos, lists[j]->size, 
+                                       abs(positions[i]), lists[0]->size);
                     break;
                 }
             }
@@ -394,43 +265,49 @@ double totalSum(RankList *lists, int *positions, int numLists)
     return total;   
 }
 
-void findBestCombination(RankList *lists, int numLists, int *taken, int size, double *lowestSum, int *comb, int index, int end, int *bestComb)
+void findBestCombination(RankList *lists, int numLists, int *taken, int size, double *lowestSum, int *comb, int index, int skip, int *bestComb)
 {
-   /* int i, filled = TRUE;
-    for (i = 0; i < size; i++)
-    {
-        if (taken[i] == FALSE) 
-        {
-            filled = FALSE;
-            break;
-        }
-    } */
-    printf("%d %d\n", index, end);
-    if (index == end - 3)
-    {
-      //  printf("checked\n");
+    // taken: same array from scaledFootrule function
+    // size: same value from scaledFootrule function
+    // comb: current test combination
+    // index: position of next combination array element to find a value for
+    // skip: boolean to prevent unnecessary checking of totalSum
+    // bestComb: same array as output from scaledFootrule function
+    
+    if (index == size && !skip)
+    {       
         double sum = totalSum(lists, comb, numLists);
         if (sum < *lowestSum)
         {
             *lowestSum = sum;
             for (int i = 0; i < size; i++) 
             {
-                if (taken[i] != RESERVED) bestComb[i] = comb[i];
+                if (bestComb[i] >= 0) bestComb[i] = comb[i];
             }
         }
         return;
     }
     
-    for (int i = 0; i < size; i++)
+    if (bestComb[index] >= 0) // prevent set values from being altered
     {
-        if (taken[i] == FALSE)
+        for (int i = 0; i < size; i++)
         {
-            taken[i] = TRUE;
-            comb[index] = i + 1;
-            findBestCombination(lists, numLists, taken, size, lowestSum, comb, index + 1, end, bestComb);
-            taken[i] = FALSE;
+            if (taken[i] == FALSE)
+            {
+                taken[i] = TRUE; // so further iterations do not use same value
+                comb[index] = i + 1;
+                findBestCombination(lists, numLists, taken, size, lowestSum,
+                                    comb, index + 1, FALSE, bestComb);
+                taken[i] = FALSE;
+            }
         }
     }
+    else if (index + 1 == size) 
+    findBestCombination(lists, numLists, taken, size, lowestSum, 
+                        comb, index + 1, FALSE, bestComb);
+    else 
+    findBestCombination(lists, numLists, taken, size, lowestSum, 
+                        comb, index + 1, TRUE, bestComb);
 }
 
 void printList(RankList list, int *positions)
@@ -441,7 +318,7 @@ void printList(RankList list, int *positions)
         count = 0;
         for (j = 0; j < list->size; j++)
         {
-            if (positions[j] == i) break;
+            if (abs(positions[j]) == i) break;
         }
         for (UrlNode curr = list->start; curr != NULL; curr = curr->next)
         {
@@ -516,12 +393,3 @@ void insertRankList(RankList list, char *url, int pos)
     }
     list->size++;
 }
-
-void printOut(RankList list)
-{
-    printf("%s, size = %d\n", list->name, list->size);
-    for (UrlNode curr = list->start; curr != NULL; curr = curr->next)
-    {
-        printf("%s, pos = %d\n", curr->url, curr->pos);
-    }
-} 
