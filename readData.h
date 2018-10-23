@@ -24,6 +24,8 @@ indexList newIndexList();
 void insertIndex(indexList list, char *url, int index);
 // Set up an index list using urls in collection.txt
 indexList setUpIndex();
+// Free up the given index list
+void freeIndexList(indexList list);
 // Creates set of urls from collection.txt
 Set urlList();
 // Convert name of an url to the unique index 

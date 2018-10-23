@@ -3,12 +3,13 @@
 // Written by Helena Ling on 07/10/18
 // Acknowledgement: Graph, stack, queue, set ADTs written by John Shepherd, BSTree ADT from week10 lab
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <unistd.h>
 #include "set.h"
 #include "graph.h"
 #include "readData.h"
@@ -95,6 +96,18 @@ indexList setUpIndex() {
     }
     fclose(fp);
     return list;
+}
+
+void freeIndexList(indexList list) {
+    indexNode curr = list->head;
+    indexNode prev = NULL;
+    while(curr != NULL) {
+        prev = curr;
+        curr = curr->next;
+        free(prev->url);
+        free(prev);
+    }
+    free(list);
 }
 
 // Change the name of the url into an integer to act as an index

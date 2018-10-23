@@ -2,6 +2,8 @@
 // Written by Helena Ling on 07/10/18
 // Acknowledgement: Graph and set ADTs written by John Shepherd, BSTree ADT from week10 lab
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -102,7 +104,9 @@ int main(int argc, char *argv[]) {
         char line[MAXLINE] = "";
         int found = FALSE;
         while (found == FALSE && fgets(line, MAXLINE, fp)) {
-            if (strstr(line, toCalculate)) {
+            char wordName[MAXNAMELEN] = "";
+            int findWord = sscanf(line, "%s", wordName);
+            if (findWord == 1 && strcmp(wordName, toCalculate) == 0) {
                 found = TRUE;
             }
         }
@@ -116,9 +120,11 @@ int main(int argc, char *argv[]) {
                 data += offset;
                 if (strcmp(urlName, toCalculate) != 0) {
                     numURLs++;
+                    if (strcmp(queryTerm[queryCount], "to") == 0) {
+                        printf("%s\n", urlName);
+                    }
                 }
             }
-
             // Calculate for tf and idf values for each url based on current query term
             char url[MAXNAMELEN] = "";
             int offsetTwo = 0;
@@ -167,6 +173,10 @@ int main(int argc, char *argv[]) {
     free(idfTable);
 
     free(tfidfList);
+
+    disposeSet(list);
+    freeIndexList(urlIndex);
+
     return 0;
 }
 

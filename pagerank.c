@@ -2,6 +2,8 @@
 // Written by Helena Ling on 07/10/18
 // Acknowledgement: Graph and set ADTs written by John Shepherd, BSTree ADT from week10 lab
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -160,6 +162,7 @@ int main(int argc, char *argv[]) {
 
     disposeGraph(g);
     disposeSet(list);
+    freeIndexList(urlIndex);
     return 0;
 }
 
