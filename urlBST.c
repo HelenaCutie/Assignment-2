@@ -1,6 +1,6 @@
 // Binary search tree ADT implementation for urls based on keyword using linked lists
 // Written by Michael Darmanian 8/10/18
-// Acknowledgement: This ADT is based on the BSTree ADT implementation from lectures
+// Acknowledgement: This ADT is based on the BSTree ADT implementation from lectures and set ADT by John Shepherd
 
 #define _POSIX_C_SOURCE 200809L
 
